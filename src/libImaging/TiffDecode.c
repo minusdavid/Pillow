@@ -16,6 +16,14 @@
 
 #ifndef uint
 #define uint uint32
+
+#define TIFFTAG_COMPRESSION	259
+#define COMPRESSION_JPEG	7
+
+#define TIFFTAG_JPEGCOLORMODE	65538
+#define JPEGCOLORMODE_RAW	0x0000
+#define JPEGCOLORMODE_RGB	0x0001
+
 #endif
 
 #include "TiffDecode.h"
@@ -233,6 +241,15 @@ int ImagingLibTiffDecode(Imaging im, ImagingCodecState state, UINT8* buffer, int
 			TRACE(("error in TIFFSetSubDirectory"));
 			return -1;
 		}
+	}
+
+	// See https://github.com/python-pillow/Pillow/issues/2926
+	//Enable TIFF_JPEGCOLORMODE as JPEGCOLORMODE_RGB to use scanline oriented access
+	//with downsampled JPEG compressed images
+	uint32 compression;
+	TIFFGetField(tiff, TIFFTAG_COMPRESSION, &compression);
+	if (compression && compression == COMPRESSION_JPEG){
+		TIFFSetField(tiff, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
 	}
 
 	size = TIFFScanlineSize(tiff);
